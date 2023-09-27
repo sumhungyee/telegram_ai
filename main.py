@@ -19,7 +19,7 @@ bot.llm = None
 bot.diffuser = load_diffuser(\
     config["IMGGEN"]["PATH"], \
         config["IMGGEN"]["LORAPATH"])
-print("loaded")
+
 queue = Queue()
 event = threading.Event()
 def answer_from_queue():
@@ -52,7 +52,11 @@ def generate_image(bot, task):
     
     img_byte_arr = img_byte_arr.getvalue()
     file = io.BytesIO(img_byte_arr)
-    bot.reply_to(task.msg, f"Positive prompt: {prompt}, \nNegative prompt: {neg_prompt}")
+    try:
+        bot.reply_to(task.msg, f"Positive prompt: {prompt}, \nNegative prompt: {neg_prompt}")
+    except telebot.apihelper.ApiTelegramException as e:
+        bot.send_message(task.msg.chat.id, f"Positive prompt: {prompt}, \nNegative prompt: {neg_prompt}")
+        
     bot.send_photo(photo=InputFile(file), chat_id=task.msg.chat.id, reply_to_message_id=task.msg, has_spoiler=True)
     bot.curr_mode = ReplyTypes.DIFFUSER
 
@@ -67,7 +71,8 @@ def generate_text(bot, task):
     else:
         bot.llm = AutoModelForCausalLM.from_pretrained(\
             config["CODELLM"]["PATH"], 
-            model_type="llama", gpu_layers=25, temperature = 0.3, max_new_tokens = 1200, context_length=4096)
+            model_type="llama", gpu_layers=25, temperature = 0.3, max_new_tokens = 1200,
+            context_length=4096)
         
        
     bot.curr_mode = task.mode     
@@ -81,17 +86,27 @@ def generate_text(bot, task):
     generated = bot.llm(task.get_prompt(task.msg.text))
     replies = [generated[i: i+TELEGRAM_MAX_MESSAGE_LENGTH] for i in range(0, len(generated), TELEGRAM_MAX_MESSAGE_LENGTH)]
     
-        
-    if not generated:   # handle empty messages without throwing exceptions
+    reply_text_with_exceptions(replies, task)
+   
+
+def reply_text_with_exceptions(replies, task):
+    if not replies:   # handle empty messages without throwing exceptions
         bot.reply_to(task.msg, "This message is empty")
     else:
         try:
             for reply in replies:
                 bot.reply_to(task.msg, reply, parse_mode="Markdown")
 
-        except Exception as e:
-            for reply in replies:
-                bot.reply_to(task.msg, reply)
+        except telebot.apihelper.ApiTelegramException as e:
+            try:
+                for reply in replies:
+                    bot.reply_to(task.msg, reply)
+            except telebot.apihelper.ApiTelegramException as f:
+                for reply in replies:
+                    bot.send_message(task.msg.chat.id, reply)
+            except Exception as g:
+                pass
+
 
 
 def execute_task(bot, task: Reply):
