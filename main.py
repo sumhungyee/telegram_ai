@@ -1,7 +1,6 @@
 import telebot
 from ctransformers import AutoModelForCausalLM
 from models import *
-import torch
 from telebot.types import InputFile
 from classes import *
 import configparser
@@ -14,12 +13,7 @@ COMMANDS = ["/chat", "/code", "/dream"]
 MAX_LEN = int(config["BOT"]["MAXLEN"])
 TELEGRAM_MAX_MESSAGE_LENGTH = 4096
 bot = telebot.TeleBot(config["BOT"]["APIKEY"])
-bot.curr_mode = None
-bot.llm = None
-bot.diffuser = load_diffuser(\
-    config["IMGGEN"]["PATH"], \
-        config["IMGGEN"]["LORAPATH"])
-
+bot.curr_mode = bot.llm = bot.diffuser = None
 queue = Queue()
 event = threading.Event()
 def answer_from_queue():
@@ -38,7 +32,12 @@ answerer.start()
 def generate_image(bot, task):
     bot.llm = None
     clear_cache()
-    bot.diffuser.to("cuda")
+    if bot.curr_mode != task.mode:
+        bot.diffuser =  load_diffuser(\
+            config["IMGGEN"]["PATH"], \
+            config["IMGGEN"]["LORAPATH"])
+        bot.diffuser.to("cuda")
+
     processed = task.msg.text.split("|")
     prompt = processed[0]
     neg_prompt = None if len(processed) == 1 else processed[1]
@@ -56,24 +55,27 @@ def generate_image(bot, task):
         bot.reply_to(task.msg, f"Positive prompt: {prompt}, \nNegative prompt: {neg_prompt}")
     except telebot.apihelper.ApiTelegramException as e:
         bot.send_message(task.msg.chat.id, f"Positive prompt: {prompt}, \nNegative prompt: {neg_prompt}")
-        
+
     bot.send_photo(photo=InputFile(file), chat_id=task.msg.chat.id, reply_to_message_id=task.msg, has_spoiler=True)
     bot.curr_mode = ReplyTypes.DIFFUSER
 
 def generate_text(bot, task):
-    bot.llm = None
-    clear_cache()
-    if task.mode == ReplyTypes.TEXT:
-        bot.llm = AutoModelForCausalLM.from_pretrained(\
-            config["TEXTLLM"]["PATH"], model_type="llama", gpu_layers=25, stop=["###"],
-            temperature = 0.7, max_new_tokens = 1200, context_length=4096)
-        
-    else:
-        bot.llm = AutoModelForCausalLM.from_pretrained(\
-            config["CODELLM"]["PATH"], 
-            model_type="llama", gpu_layers=25, temperature = 0.3, max_new_tokens = 1200,
-            context_length=4096)
-        
+    bot.diffuser = None
+    if bot.curr_mode != task.mode:
+        print("Resetting llm...")
+        bot.llm = None
+        clear_cache()
+        if task.mode == ReplyTypes.TEXT:
+            bot.llm = AutoModelForCausalLM.from_pretrained(\
+                config["TEXTLLM"]["PATH"], model_type="llama", gpu_layers=25, stop=["###"],
+                temperature = 0.7, max_new_tokens = 1200, context_length=4096)
+            
+        else:
+            bot.llm = AutoModelForCausalLM.from_pretrained(\
+                config["CODELLM"]["PATH"], 
+                model_type="llama", gpu_layers=25, temperature = 0.3, max_new_tokens = 1200,
+                context_length=4096)
+            
        
     bot.curr_mode = task.mode     
     msg_length = len(task.msg.text)
@@ -110,23 +112,12 @@ def reply_text_with_exceptions(replies, task):
 
 
 def execute_task(bot, task: Reply):
-    if bot.curr_mode != task.mode:
-        if bot.curr_mode == ReplyTypes.DIFFUSER:
-            bot.diffuser.to("cpu")
-            generate_text(bot, task)
 
-        elif task.mode == ReplyTypes.DIFFUSER: 
-            generate_image(bot, task)
-        else:
-            bot.diffuser.to("cpu")
-            generate_text(bot, task)
+    if task.mode == ReplyTypes.DIFFUSER:
+        generate_image(bot, task)
     else:
-        if task.mode == ReplyTypes.DIFFUSER:
-            generate_image(bot, task)
-        else:
-            bot.diffuser.to("cpu")
-            generate_text(bot, task)
-            
+        generate_text(bot, task)
+    
 
 def add_to_queue(msg, reply_type):  
     if f"/chat{config['BOT']['BOTNAME']}" not in msg.text or msg.text.strip() in COMMANDS:
