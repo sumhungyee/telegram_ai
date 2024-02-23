@@ -1,9 +1,10 @@
 import telebot
-from ctransformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from models import *
 from telebot.types import InputFile
 from classes import *
 import configparser
+import json
 import threading
 import io
 from queue import Queue
@@ -13,15 +14,14 @@ COMMANDS = ["/chat", "/code", "/dream"]
 MAX_LEN = int(config["BOT"]["MAXLEN"])
 TELEGRAM_MAX_MESSAGE_LENGTH = 4096
 bot = telebot.TeleBot(config["BOT"]["APIKEY"])
-bot.curr_mode = bot.llm = bot.diffuser = None
+bot.curr_mode = bot.llm = bot.diffuser = bot.tok = None
 queue = Queue()
 event = threading.Event()
 def answer_from_queue():
  
     while not event.is_set():
         if queue.qsize() >= 1:
-            task = queue.get()
-            
+            task = queue.get()   
             execute_task(bot, task)
             
 
@@ -30,8 +30,13 @@ answerer=threading.Thread(target=answer_from_queue)
 answerer.start()
 
 def generate_image(bot, task):
+    
+    if bot.llm is not None:
+        bot.llm.cpu()
     bot.llm = None
+    bot.tok = None
     clear_cache()
+    print("supposed to clear")
     if bot.curr_mode != task.mode:
         bot.diffuser =  load_diffuser(\
             config["IMGGEN"]["PATH"], \
@@ -43,7 +48,7 @@ def generate_image(bot, task):
     neg_prompt = None if len(processed) == 1 else processed[1]
 
     image = bot.diffuser(\
-        prompt=prompt, negative_prompt=neg_prompt, num_inference_steps=60, \
+        prompt=prompt, negative_prompt=neg_prompt, num_inference_steps=40, \
             height=512, width=512, num_images_per_prompt=1).images[0]
 
     img_byte_arr = io.BytesIO()
@@ -56,26 +61,23 @@ def generate_image(bot, task):
     except telebot.apihelper.ApiTelegramException as e:
         bot.send_message(task.msg.chat.id, f"Positive prompt: {prompt}, \nNegative prompt: {neg_prompt}")
 
-    bot.send_photo(photo=InputFile(file), chat_id=task.msg.chat.id, reply_to_message_id=task.msg, has_spoiler=True)
+    bot.send_photo(task.msg.chat.id, InputFile(file), has_spoiler=True)
     bot.curr_mode = ReplyTypes.DIFFUSER
 
 def generate_text(bot, task):
     bot.diffuser = None
     if bot.curr_mode != task.mode:
-        print("Resetting llm...")
+        print("Mounting llm...")
+        if bot.llm is not None:
+            bot.llm.cpu()
         bot.llm = None
         clear_cache()
-        if task.mode == ReplyTypes.TEXT:
-            bot.llm = AutoModelForCausalLM.from_pretrained(\
-                config["TEXTLLM"]["PATH"], model_type="llama", gpu_layers=25, stop=["###"],
-                temperature = 0.7, max_new_tokens = 1200, context_length=4096)
-            
-        else:
-            bot.llm = AutoModelForCausalLM.from_pretrained(\
-                config["CODELLM"]["PATH"], 
-                model_type="llama", gpu_layers=25, temperature = 0.3, max_new_tokens = 1200,
-                context_length=4096)
-            
+        
+        path = config["TEXTLLM"]["PATH"] if task.mode == ReplyTypes.TEXT else config["CODELLM"]["PATH"]
+        bot.llm = AutoModelForCausalLM.from_pretrained(\
+            path, device_map="cuda") 
+        bot.tok = AutoTokenizer.from_pretrained(path)
+       
        
     bot.curr_mode = task.mode     
     msg_length = len(task.msg.text)
@@ -84,10 +86,24 @@ def generate_text(bot, task):
             task.msg, f"Message is too long, please reduce the length of your prompt to <={MAX_LEN} characters. Currently {msg_length} characters.")
         return None
 
-    
-    generated = bot.llm(task.get_prompt(task.msg.text))
+    prompt_template = task.get_prompt(task.msg.text)
+    input_ids = bot.tok(prompt_template, return_tensors='pt').input_ids.cuda()
+    output = bot.llm.generate(
+        inputs=input_ids,
+        temperature=0.7, 
+        do_sample=True, 
+        top_p=0.95, 
+        top_k=40, 
+        repetition_penalty=1,
+        max_new_tokens=2048,
+        eos_token_id=bot.tok.eos_token_id,
+        
+    )
+
+    generated = bot.tok.batch_decode(output[:, input_ids.shape[1]:], skip_special_tokens=True)[0]
     replies = [generated[i: i+TELEGRAM_MAX_MESSAGE_LENGTH] for i in range(0, len(generated), TELEGRAM_MAX_MESSAGE_LENGTH)]
-    
+    input_ids.cpu()
+    del input_ids
     reply_text_with_exceptions(replies, task)
    
 

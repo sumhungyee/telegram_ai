@@ -1,16 +1,18 @@
 
 
 import gc
+
 import torch
 import torch.nn as nn
 
-from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
+from diffusers import StableDiffusionPipeline, EulerDiscreteScheduler
 
 
 def clear_cache():
     gc.collect()
     with torch.no_grad():
         torch.cuda.empty_cache()
+   
    
 
 # Extracted from diffusers' scripts: 
@@ -21,7 +23,7 @@ from safetensors.torch import load_file
 def load_lora(
     pipeline
     ,lora_path
-    ,lora_weight=0.8
+    ,lora_weight=0.75
 ):
     if not lora_path.strip():
         return pipeline
@@ -97,7 +99,7 @@ def load_diffuser(model_path, lora_path):
     pipe = StableDiffusionPipeline.from_pretrained(model_path, torch_dtype=torch.float32)
 
     pipe.safety_checker = None
-    pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+    pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
     pipe = load_lora(pipeline=pipe, lora_path=lora_path)
     return pipe
 

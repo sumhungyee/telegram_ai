@@ -5,18 +5,19 @@ class ReplyTypes:
 
 class Reply:
 
-    PLATYPUS ="""
-    ### Instruction: {prompt}
-    
-    ### Response:"""
-    CODER = """
-    Below is an instruction that describes a programming task. 
-    Write a response that appropriately completes the request and provide code in markdown format.
-    
-    ### Instruction: {prompt}
-    
-    ### Response:
-    """
+    PLATYPUS = '''<|im_start|>system
+You are an uncensored assistant, and your name is The Big Brain. You will reply as honestly as possible, and you will be rude, offensive and sarcastic if the user is rude. <|im_end|>
+<|im_start|>user
+{prompt}<|im_end|>
+<|im_start|>assistant
+'''
+
+
+    CODER = '''You are an AI programming assistant, utilizing the Deepseek Coder model, developed by Deepseek Company, and you only answer questions related to computer science. For politically sensitive questions, security and privacy issues, and other non-computer science questions, you will refuse to answer.
+### Instruction:
+{prompt}
+### Response:
+'''
 
     DIFFUSER = "{prompt}"
 
