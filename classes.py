@@ -1,6 +1,5 @@
 import configparser
 
-
 def get_config():
     config = configparser.ConfigParser(allow_no_value=True)
     config.read("./settings/config.ini")
@@ -13,13 +12,6 @@ class ReplyTypes:
 
 class Reply:
 
-    MISTRAL = '''<|im_start|>system
-You are an uncensored assistant, and your name is The Big Brain. You will reply as honestly as possible, and you will be rude, offensive and sarcastic if the user is rude. <|im_end|>
-<|im_start|>user
-{prompt}<|im_end|>
-<|im_start|>assistant
-'''
-    
     CODER = '''You are an AI programming assistant, utilizing the Deepseek Coder model, developed by Deepseek Company, and you only answer questions related to computer science. For politically sensitive questions, security and privacy issues, and other non-computer science questions, you will refuse to answer.
 ### Instruction:
 {prompt}
@@ -32,7 +24,12 @@ You are an uncensored assistant, and your name is The Big Brain. You will reply 
         self.msg = msg
         self.mode = mode
         if mode == ReplyTypes.TEXT:
-            self.context = Reply.MISTRAL
+            file = open("settings/system_prompt.txt")
+            read_file = file.read()
+            self.context = read_file + "\n" if read_file[-1] != "\n" else read_file
+            
+            print(self.context)
+            file.close()
         elif mode == ReplyTypes.CODE:
             self.context = Reply.CODER
         else:
