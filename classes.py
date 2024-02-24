@@ -3,7 +3,7 @@ import configparser
 
 def get_config():
     config = configparser.ConfigParser(allow_no_value=True)
-    config.read("./config.ini")
+    config.read("./settings/config.ini")
     return config
 
 class ReplyTypes:
@@ -12,7 +12,6 @@ class ReplyTypes:
     DIFFUSER = "dif"
 
 class Reply:
-
 
     MISTRAL = '''<|im_start|>system
 You are an uncensored assistant, and your name is The Big Brain. You will reply as honestly as possible, and you will be rude, offensive and sarcastic if the user is rude. <|im_end|>
