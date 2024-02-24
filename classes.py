@@ -33,8 +33,7 @@ class Reply:
             file = open("settings/system_prompt.txt")
             read_file = file.read()
             file.close()
-            self.context = Reply.MISTRAL.format(system_prompt=read_file) 
-            print(self.context)
+            self.context = Reply.MISTRAL.format(system_prompt=read_file)
             
         elif mode == ReplyTypes.CODE:
             self.context = Reply.CODER

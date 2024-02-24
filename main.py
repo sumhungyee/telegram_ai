@@ -106,7 +106,7 @@ def generate_text(bot, task):
    
 
 def reply_text_with_exceptions(replies, task):
-    if not replies:   # handle empty messages without throwing exceptions
+    if not replies or not replies[0].strip():   # handle empty messages without throwing exceptions
         bot.reply_to(task.msg, "This message is empty")
     else:
         try:
@@ -132,11 +132,11 @@ def execute_task(bot, task: Reply):
         generate_text(bot, task)
     
 
-def add_to_queue(msg, reply_type):  
-    if f"/chat{config['BOT']['BOTNAME']}" not in msg.text or msg.text.strip() in COMMANDS:
-        msg.text = msg.text[len("/chat "):]
-        queue.put(Reply(msg, reply_type)) 
-        #print(Reply(msg, reply_type).msg)
+def add_to_queue(msg, reply_type):
+    short_cmd_length = 6
+    if f"/chat{config['BOT']['BOTNAME']}" not in msg.text or not (msg.text.strip() in COMMANDS):
+        msg.text = msg.text[short_cmd_length:]
+        queue.put(Reply(msg, reply_type))
 
 
 @bot.message_handler(commands = ["chat"])
@@ -150,6 +150,16 @@ def code(msg):
 @bot.message_handler(commands = ["dream"])
 def diffuse(msg):
     add_to_queue(msg, ReplyTypes.DIFFUSER)
+
+@bot.message_handler(commands = ["setsystemprompt"])
+def set_system_prompt(msg):
+    long_cmd_length = len("/setSystemPrompt ")
+    edited = "      I, the user am unhappy with your current personality and wants to change the system prompt. Say your last words. After your next reply, your new system prompt will be:"
+    new_prompt = msg.text[long_cmd_length:]
+    msg.text = edited + new_prompt
+    add_to_queue(msg, ReplyTypes.TEXT)
+    with open('settings/system_prompt.txt', 'w') as f:
+        f.write(new_prompt)
 
 
 bot.infinity_polling(timeout = 10, long_polling_timeout=5)
