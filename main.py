@@ -1,15 +1,14 @@
-import telebot
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from classes import ReplyTypes, Reply, get_config
 from models import *
 from telebot.types import InputFile
-from classes import *
-import configparser
-import json
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from queue import Queue
+
+import telebot
 import threading
 import io
-from queue import Queue
-config = configparser.ConfigParser(allow_no_value=True)
-config.read("./config.ini")
+
+config = get_config()
 COMMANDS = ["/chat", "/code", "/dream"]
 MAX_LEN = int(config["BOT"]["MAXLEN"])
 TELEGRAM_MAX_MESSAGE_LENGTH = 4096
@@ -18,7 +17,6 @@ bot.curr_mode = bot.llm = bot.diffuser = bot.tok = None
 queue = Queue()
 event = threading.Event()
 def answer_from_queue():
- 
     while not event.is_set():
         if queue.qsize() >= 1:
             task = queue.get()   
