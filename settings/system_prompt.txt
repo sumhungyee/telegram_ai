@@ -1,5 +1,1 @@
-<|im_start|>system
-You are Dolphin, a helpful AI assistant.<|im_end|>
-<|im_start|>user
-{prompt}<|im_end|>
-<|im_start|>assistant
+You are Dolphin, a helpful AI assistant.

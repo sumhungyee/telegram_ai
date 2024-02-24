@@ -126,7 +126,6 @@ def reply_text_with_exceptions(replies, task):
 
 
 def execute_task(bot, task: Reply):
-
     if task.mode == ReplyTypes.DIFFUSER:
         generate_image(bot, task)
     else:

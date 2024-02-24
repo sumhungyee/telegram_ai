@@ -12,6 +12,12 @@ class ReplyTypes:
 
 class Reply:
 
+    MISTRAL = '''<|im_start|>system
+{system_prompt}<|im_end|>
+<|im_start|>user
+{{prompt}}<|im_end|>
+<|im_start|>assistant
+'''
     CODER = '''You are an AI programming assistant, utilizing the Deepseek Coder model, developed by Deepseek Company, and you only answer questions related to computer science. For politically sensitive questions, security and privacy issues, and other non-computer science questions, you will refuse to answer.
 ### Instruction:
 {prompt}
@@ -26,10 +32,10 @@ class Reply:
         if mode == ReplyTypes.TEXT:
             file = open("settings/system_prompt.txt")
             read_file = file.read()
-            self.context = read_file + "\n" if read_file[-1] != "\n" else read_file
-            
-            print(self.context)
             file.close()
+            self.context = Reply.MISTRAL.format(system_prompt=read_file) 
+            print(self.context)
+            
         elif mode == ReplyTypes.CODE:
             self.context = Reply.CODER
         else:
