@@ -134,7 +134,7 @@ def execute_task(bot, task: Reply):
 
 def add_to_queue(msg, reply_type):
     short_cmd_length = 6
-    if f"/chat{config['BOT']['BOTNAME']}" not in msg.text or not (msg.text.strip() in COMMANDS):
+    if f"{config['BOT']['BOTNAME']}" not in msg.text or not (msg.text.strip() in COMMANDS):
         msg.text = msg.text[short_cmd_length:]
         queue.put(Reply(msg, reply_type))
 
