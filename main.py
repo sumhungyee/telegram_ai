@@ -34,7 +34,7 @@ def generate_image(bot, task):
     bot.llm = None
     bot.tok = None
     clear_cache()
-    print("supposed to clear")
+
     if bot.curr_mode != task.mode:
         bot.diffuser =  load_diffuser(\
             config["IMGGEN"]["PATH"], \
@@ -59,8 +59,13 @@ def generate_image(bot, task):
     except telebot.apihelper.ApiTelegramException as e:
         bot.send_message(task.msg.chat.id, f"Positive prompt: {prompt}, \nNegative prompt: {neg_prompt}")
 
-    bot.send_photo(task.msg.chat.id, InputFile(file), has_spoiler=True)
+    photo_file = InputFile(file)
     bot.curr_mode = ReplyTypes.DIFFUSER
+    try:
+        bot.send_photo(task.msg.chat.id, photo_file, has_spoiler=True)
+    except Exception as e:
+        bot.send_message(task.msg.chat.id, f"Error sending image:\n```python\n{e}\n```", parse_mode="Markdown")
+    
 
 def generate_text(bot, task):
     bot.diffuser = None
