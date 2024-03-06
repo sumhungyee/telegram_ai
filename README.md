@@ -4,6 +4,8 @@ Telegram_AI provides an AI-powered Telegram bot, optimised for local usage. Supp
 Powered by large language models for general tasks, as well as programming tasks.
 
 # Installation Guide
+> [!NOTE]  
+> The installation guide will be updated and streamlined by incorporating shell scripting, similar to [Telegram_ai_gptq](https://github.com/sumhungyee/telegram_ai_gptq).
 1. Ensure your computer has a dedicate GPU with at least 8GB of VRAM and ensure CUDA Toolkit (>=11.8) is installed.
 2. Navigate to a specific location on your computer, and clone the repository.
   ```
