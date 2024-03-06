@@ -5,13 +5,17 @@ Powered by large language models for general tasks, as well as programming tasks
 
 # Installation Guide
 > [!NOTE]  
-> The installation guide will be updated and streamlined by incorporating shell scripting, similar to [Telegram_ai_gptq](https://github.com/sumhungyee/telegram_ai_gptq).
-1. Ensure your computer has a dedicate GPU with at least 8GB of VRAM and ensure CUDA Toolkit (>=11.8) is installed.
-2. Navigate to a specific location on your computer, and clone the repository.
+> This installation guide will be updated and streamlined by incorporating shell scripting, similar to [Telegram_ai_gptq](https://github.com/sumhungyee/telegram_ai_gptq).
+### Step 1
+Ensure your computer has a dedicate GPU with at least 8GB of VRAM and ensure CUDA Toolkit (>=11.8) is installed.
+
+### Step 2
+Navigate to a specific location on your computer, and clone the repository.
   ```
   git clone https://github.com/sumhungyee/telegram_ai.git
   ```
-3. Download the desired models off HuggingFace onto your computer and edit `config.ini`.
+### Step 3
+Download the desired models off HuggingFace onto your computer and edit `config.ini`.
   To download, navigate to a directory of your choice. Then, perform the following operations.
   Recommended code LLM: [Deepseek-6.7b](https://arxiv.org/pdf/2401.14196.pdf)
   ```
@@ -21,8 +25,10 @@ Powered by large language models for general tasks, as well as programming tasks
   ```
   git clone https://huggingface.co/TheBloke/dolphin-2.2.1-mistral-7B-GPTQ -b gptq-4bit-32g-actorder_True
   ```
-4. Edit `config.ini` and enter the paths of these models into the appropriate field. For example, `C:\...\dolphin-2.2.1-mistral-7B-GPTQ`
-5. Run `main.py`.
+### Step 4
+Edit `config.ini` and enter the paths of these models into the appropriate field. For example, `C:\...\dolphin-2.2.1-mistral-7B-GPTQ`
+### Step 5
+Run `main.py`.
 
 
 # Samples :
