@@ -1,6 +1,6 @@
 # telegram_ai (@isthisbotabot)
-This project is a spiritual successor of an older project: [Telegram_ai_gptq](https://github.com/sumhungyee/telegram_ai_gptq)
-AI-powered Telegram bot, optimised for local usage. Supports Image generation using Stable Diffusion v1.5.
+This project is a spiritual successor of an older project: [Telegram_ai_gptq](https://github.com/sumhungyee/telegram_ai_gptq).
+Telegram_AI provides an AI-powered Telegram bot, optimised for local usage. Supports Image generation using Stable Diffusion v1.5.
 Powered by large language models for general tasks, as well as programming tasks.
 
 # Installation Guide
