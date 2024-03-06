@@ -1,4 +1,4 @@
-# telegram_ai (@isthisbotabot)
+![6e5fc858-d2a7-4b1d-b088-d25fde962f58](https://github.com/sumhungyee/telegram_ai/assets/113227987/82b4c45e-239d-483f-9ba8-488677361096)# telegram_ai (@isthisbotabot)
 This project is a spiritual successor of an older project: [Telegram_ai_gptq](https://github.com/sumhungyee/telegram_ai_gptq).
 Telegram_AI provides an AI-powered Telegram bot, optimised for local usage. Supports Image generation using Stable Diffusion v1.5.
 Powered by large language models for general tasks, as well as programming tasks.
@@ -39,7 +39,7 @@ Run `main.py`.
 ### Scenario 2. User wants help in programming tasks.
 ![b3d0233b-f562-44f6-82fa-2ff5be47e310](https://github.com/sumhungyee/telegram_ai/assets/113227987/553cdcb5-3cf4-46e9-b27c-b7bc2e49c46e)
 ### Scenario 3. User wants to generate an image.
-![6e5fc858-d2a7-4b1d-b088-d25fde962f58](https://github.com/sumhungyee/telegram_ai/assets/113227987/c1fa8d97-0cd0-47b0-a289-cde6518660ed)
+![6e5fc858-d2a7-4b1d-b088-d25fde962f58](https://github.com/sumhungyee/telegram_ai/assets/113227987/4d25aefe-113b-4e87-8046-a7e5a4465e1e)
 ### Scenario 4. User wants to generate an image without certain features (insert negative prompts)
 ![01c3b311-6779-470f-bfd0-a1494024bbaa](https://github.com/sumhungyee/telegram_ai/assets/113227987/1481d350-c7d2-4f60-bc14-026a004a7f69)
 ### Scenario 5. User wants to change system prompt.
