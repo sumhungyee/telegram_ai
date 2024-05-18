@@ -3,5 +3,5 @@
 **/environment/
 **/models/*
 !**/models/.gitkeep
-
+.env
 
