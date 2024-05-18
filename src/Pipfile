@@ -15,6 +15,7 @@ torchaudio = {index = "pytorch",version = "==2.2.2"}
 exllamav2 = "*"
 duckduckgo-search = "*"
 pytelegrambotapi = "*"
+transformers = "*"
 
 [requires]
 python_version = "3.11"
