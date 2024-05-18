@@ -1,5 +1,7 @@
 **/__pycache__/
 **/*.safetensors
 **/environment/
+**/models/*
+!**/models/.gitkeep
 
 
