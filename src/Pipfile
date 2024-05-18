@@ -16,6 +16,7 @@ exllamav2 = "*"
 duckduckgo-search = "*"
 pytelegrambotapi = "*"
 transformers = "*"
+python-dotenv = "*"
 
 [requires]
 python_version = "3.11"
