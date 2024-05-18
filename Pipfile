@@ -1,0 +1,20 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[[source]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu118"
+verify_ssl = false
+
+[packages]
+torch = {index = "pytorch",version = "==2.2.2"}
+torchvision = {index = "pytorch",version = "==0.17.2"}
+torchaudio = {index = "pytorch",version = "==2.2.2"}
+exllamav2 = "*"
+duckduckgo-search = "*"
+
+[requires]
+python_version = "3.11"
+python_full_version = "3.11.8"
