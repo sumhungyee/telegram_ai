@@ -7,4 +7,4 @@ services:
     env_file:
       - .env
     volumes:
-      - ./src/settings:/src/settings
+      - ./src/app/data:/src/app/data
