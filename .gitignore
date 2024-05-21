@@ -2,6 +2,8 @@
 **/*.safetensors
 **/environment/
 **/models/*
+**/data/*
+!**/data/.gitkeep
 !**/models/.gitkeep
 .env
 
