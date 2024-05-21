@@ -125,7 +125,7 @@ def get_default_empty_conv():
         }
     ]
 
-def get_conversation(msg, path='./app/data/sysprompt.json'):
+def get_conversation(msg, path='./app/data/conversations.json'):
     with open(path) as f:
         data = json.load(f)
         chat_id = str(msg.chat.id)
@@ -134,7 +134,7 @@ def get_conversation(msg, path='./app/data/sysprompt.json'):
         
     return data[chat_id]
 
-def store_conversation(msg, conv, path='./app/data/sysprompt.json'):
+def store_conversation(msg, conv, path='./app/data/conversations.json'):
     with open(path) as f:
         data = json.load(f)
     chat_id = str(msg.chat.id)
