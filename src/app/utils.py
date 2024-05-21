@@ -83,16 +83,16 @@ def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 4096
         print(chunk, end = "")
         output.append(chunk)
         if generated_tokens > 0 and generated_tokens % Chunk_size == 0:
-            bot.send_message(msg.chat.id, "".join(output),  reply_parameters=ReplyParameters(message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True, quote_parse_mode="Markdown" ))
+            bot.send_message(msg.chat.id, "".join(output),  reply_parameters=ReplyParameters(message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True, parse_mode="Markdown" ))
             output = []
 
         if eos or generated_tokens == max_new_tokens:
-            bot.send_message(msg.chat.id, "".join(output), reply_parameters=ReplyParameters(message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True, quote_parse_mode="Markdown"))
+            bot.send_message(msg.chat.id, "".join(output), reply_parameters=ReplyParameters(message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True, parse_mode="Markdown"))
             break
     return "".join(output)
 
 
-def execute_task(bot, conversation, msg, max_len=8100):
+def execute_task(bot, conversation, msg, reply_type, max_len=8100):
     
     # time to reply
     stringified_conversation = bot.llm.apply_prompt_template(conversation)
@@ -107,16 +107,37 @@ def execute_task(bot, conversation, msg, max_len=8100):
         "role": "assistant", "content": final
     }
     conversation.append(reply)
-    store_conversation(msg, conversation)
+    if reply_type == ReplyTypes.RESET:
+        new_conversation = [
+            {
+                "role": "system", "content": msg.text
+            }
+        ]
+        store_conversation(msg, new_conversation)
+    else:
+        store_conversation(msg, conversation)
 
-  
+def get_default_empty_conv():
+    return [
+        {
+        "role": "system",
+        "content": "You are an intelligent assistant who tries its best in assisting the user"
+        }
+    ]
+
 def get_conversation(msg, path='./app/data/sysprompt.json'):
     with open(path) as f:
         data = json.load(f)
-    return data
+        chat_id = str(msg.chat.id)
+        if chat_id not in data:
+            data[chat_id] = get_default_empty_conv()
+        
+    return data[chat_id]
 
-def store_conversation(msg, data, path='./app/data/sysprompt.json'):
+def store_conversation(msg, conv, path='./app/data/sysprompt.json'):
+    with open(path) as f:
+        data = json.load(f)
+    chat_id = str(msg.chat.id)
+    data[chat_id] = conv
     with open(path, 'w') as f:
         json.dump(data, f, indent=4)
-
-
