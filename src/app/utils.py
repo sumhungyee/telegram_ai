@@ -126,6 +126,10 @@ def get_default_empty_conv():
     ]
 
 def get_conversation(msg, path='./app/data/conversations.json'):
+    if not os.path.exists(path):
+        with open(path, "w") as f:
+            json.dump({}, f, indent=4)
+
     with open(path) as f:
         data = json.load(f)
         chat_id = str(msg.chat.id)
