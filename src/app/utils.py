@@ -83,11 +83,13 @@ def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 4096
         print(chunk, end = "")
         output.append(chunk)
         if generated_tokens > 0 and generated_tokens % Chunk_size == 0:
-            bot.send_message(msg.chat.id, "".join(output),  reply_parameters=ReplyParameters(message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True, parse_mode="Markdown" ))
+            bot.send_message(msg.chat.id, "".join(output),  reply_parameters=ReplyParameters(
+                message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True),  parse_mode="Markdown" )
             output = []
 
         if eos or generated_tokens == max_new_tokens:
-            bot.send_message(msg.chat.id, "".join(output), reply_parameters=ReplyParameters(message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True, parse_mode="Markdown"))
+            bot.send_message(msg.chat.id, "".join(output), reply_parameters=ReplyParameters(
+                message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True), parse_mode="Markdown")
             break
     return "".join(output)
 
