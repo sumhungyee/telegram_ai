@@ -8,3 +8,11 @@ services:
       - .env
     volumes:
       - ./src/app/data:/src/app/data
+    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

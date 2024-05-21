@@ -1,9 +1,12 @@
 
 import torch
 import telebot
+from telebot.types import ReplyParameters
 import gc
+import json
 import os
 from jinja2 import Template
+from dotenv import load_dotenv
 
 from exllamav2 import (
     ExLlamaV2,
@@ -25,46 +28,52 @@ def clear_cache():
 class ReplyTypes:
     CODE = "code"
     TEXT = "text"
+    RESET = "reset"
 
 def load_bot():
+    
     bot = telebot.TeleBot(os.getenv('APIKEY'))
-    bot.mode = bot.llm = bot.tok = bot.settings = bot.cache = None
+    bot.llm = Llama3()
     return bot
 
+class Llama3:
 
-def load_llama3(mode) -> tuple:
-    config = ExLlamaV2Config()
-    config.model_dir = os.getenv('LLMPATH')
-    config.prepare()
-    config.max_batch_size = batch_size = 1
-    llm = ExLlamaV2(config)
-    cache = ExLlamaV2Cache_8bit(llm, lazy = True, batch_size = batch_size)
-    llm.load_autosplit(cache)
-    tokenizer = ExLlamaV2Tokenizer(config)
+    def __init__(self):
+        load_dotenv()
+        self.config = ExLlamaV2Config()
+        self.config.model_dir = os.getenv('LLMPATH')
+        self.config.prepare()
+        self.config.max_batch_size = batch_size = 1
+        self.model = ExLlamaV2(self.config)
+        self.cache = ExLlamaV2Cache_8bit(self.model, lazy = True, batch_size = batch_size)
+        self.model.load_autosplit(self.cache)
+        self.tokenizer = ExLlamaV2Tokenizer(self.config)
+        self.settings = ExLlamaV2Sampler.Settings()
+        self.settings.temperature = 0.85
+        self.settings.top_k = 50
+        self.settings.top_p = 0.8
+        self.settings.token_repetition_penalty = 1.05
+        self.stop_conditions = [128009, self.tokenizer.eos_token_id]
 
-    settings = ExLlamaV2Sampler.Settings()
-    settings.temperature = 0.85
-    settings.top_k = 50
-    settings.top_p = 0.8
-    settings.token_repetition_penalty = 1.05
-
-    return mode, llm, tokenizer, settings, cache, [128009, tokenizer.eos_token_id]
-
-def task_delegator(reply_type)  -> tuple:
-    if reply_type == ReplyTypes.TEXT:
-        return load_llama3(reply_type)
-    elif reply_type == ReplyTypes.CODE:
-        return None # to be updated
-    else:
-        raise Exception
+    def start_generator(self, input_ids):
+        self.generator = ExLlamaV2StreamingGenerator(self.model, self.cache, self.tokenizer)
+        clear_cache()
+        self.generator.warmup()
+        self.generator.set_stop_conditions(self.stop_conditions)
+        
+        self.generator.begin_stream_ex(input_ids, self.settings,  decode_special_tokens=True)
+        return self.generator
     
-def send_chunked_response_from_prompt(bot, stringified_conversation, stop_conditions, id, max_new_tokens = 4096, Chunk_size = 512):
-    generator = ExLlamaV2StreamingGenerator(bot.llm, bot.cache, bot.tok)
-    input_ids = bot.tok.encode(stringified_conversation)
-    prompt_tokens = input_ids.shape[-1] # stats, to be implemented later
-    generator.warmup()
-    generator.set_stop_conditions(stop_conditions)
-    generator.begin_stream_ex(input_ids, bot.settings,  decode_special_tokens=True)
+    def apply_prompt_template(self, messages):
+        template = Template("{% for message in messages %}{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{{ '<|im_start|>assistant\n' }}")
+        return template.render(messages=messages)
+
+
+
+def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 4096, Chunk_size = 512) -> str:
+    
+    generator = bot.llm.start_generator(input_ids)
+    clear_cache()
 
     output = []
     generated_tokens = 0
@@ -74,40 +83,40 @@ def send_chunked_response_from_prompt(bot, stringified_conversation, stop_condit
         print(chunk, end = "")
         output.append(chunk)
         if generated_tokens > 0 and generated_tokens % Chunk_size == 0:
-            bot.send_message(id, "".join(output),  reply_parameters=id)
+            bot.send_message(msg.chat.id, "".join(output),  reply_parameters=ReplyParameters(message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True, quote_parse_mode="Markdown" ))
             output = []
 
         if eos or generated_tokens == max_new_tokens:
-            bot.send_message(id, "".join(output), reply_parameters=id)
+            bot.send_message(msg.chat.id, "".join(output), reply_parameters=ReplyParameters(message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True, quote_parse_mode="Markdown"))
             break
+    return "".join(output)
 
 
+def execute_task(bot, conversation, msg, max_len=8100):
     
-
-def execute_task(bot, conversation, reply_type, id):
-    # bot.mode, bot.llm, bot.tok, bot.settings, bot.cache
-    if bot.mode != reply_type:
-        bot.mode, bot.llm, bot.tok, bot.settings, bot.cache, stop_conditions = task_delegator(reply_type)
-        clear_cache()
     # time to reply
-    stringified_conversation = apply_llama3_prompt_template(conversation)
+    stringified_conversation = bot.llm.apply_prompt_template(conversation)
+    input_ids = bot.llm.tokenizer.encode(stringified_conversation)
+    while len(input_ids) >= max_len:
+        conversation = conversation[0:1] + conversation[2:]
+        stringified_conversation = bot.llm.apply_prompt_template(conversation)
+        input_ids = bot.llm.tokenizer.encode(stringified_conversation)
 
-    send_chunked_response_from_prompt(bot, stringified_conversation, stop_conditions, id)
+    final = send_chunked_response_from_prompt(bot, input_ids, msg)
+    reply = {
+        "role": "assistant", "content": final
+    }
+    conversation.append(reply)
+    store_conversation(msg, conversation)
+
   
- 
+def get_conversation(msg, path='./app/data/sysprompt.json'):
+    with open(path) as f:
+        data = json.load(f)
+    return data
 
-def apply_llama3_prompt_template(messages):
-    template = Template("{% for message in messages %}{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{{ '<|im_start|>assistant\n' }}")
-    return template.render(messages=messages)
+def store_conversation(msg, data, path='./app/data/sysprompt.json'):
+    with open(path, 'w') as f:
+        json.dump(data, f, indent=4)
 
-def get_llama3_prompt_template_per_msg():
-    approx_template = Template("{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{{ '<|im_start|>assistant\n' }}")
-    return approx_template
 
-def truncate(messages, tokenizer, prompt_template_per_msg_function, maxlen=8192):
-    tokenized = list(map(lambda message: tokenizer.encode(prompt_template_per_msg_function().render(message=message)), messages))
-    pointer = 1
-    while len([x for msg in tokenized for x in msg]) >= maxlen:
-        pointer += 1
-        tokenized = tokenized[0:1] + tokenized[2:]
-    return messages[0:1] + messages[pointer:]
