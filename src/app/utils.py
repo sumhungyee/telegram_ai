@@ -121,7 +121,7 @@ def get_default_empty_conv():
     return [
         {
         "role": "system",
-        "content": "You are an intelligent assistant who tries its best in assisting the user"
+        "content": "You are a helpful AI assistant."
         }
     ]
 
