@@ -77,12 +77,13 @@ class Llama3:
         self.stop_conditions = [128009, self.tokenizer.eos_token_id]
 
     def start_generator(self, input_ids):
+        start = time.time()
         self.generator = ExLlamaV2StreamingGenerator(self.model, self.cache, self.tokenizer)
         clear_gpu_cache()
         self.generator.warmup()
         self.generator.set_stop_conditions(self.stop_conditions)
-        
         self.generator.begin_stream_ex(input_ids, self.settings,  decode_special_tokens=True)
+        logger.info(f"Generator initialised in {round(time.time() - start, 3)} seconds")
         return self.generator
     
     def apply_prompt_template(self, messages):
