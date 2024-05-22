@@ -3,7 +3,7 @@
 **/environment/
 **/models/*
 **/data/*
-!**/data/.gitkeep
-!**/models/.gitkeep
+**/logs/*
+!**/.gitkeep
 .env
 

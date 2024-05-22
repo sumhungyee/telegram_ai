@@ -8,6 +8,7 @@ services:
       - .env
     volumes:
       - ./src/app/data:/src/app/data
+      - ./src/logs:/src/logs
     
     deploy:
       resources:

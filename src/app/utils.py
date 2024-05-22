@@ -1,12 +1,15 @@
-
+import time
 import torch
 import telebot
-from telebot.types import ReplyParameters
 import gc
 import json
+import logging
 import os
-from jinja2 import Template
+
 from dotenv import load_dotenv
+from logging.handlers import RotatingFileHandler
+from jinja2 import Template
+from telebot.types import ReplyParameters
 
 from exllamav2 import (
     ExLlamaV2,
@@ -20,10 +23,26 @@ from exllamav2.generator import (
     ExLlamaV2Sampler
 )
 
-def clear_cache():
+# INITIALISE LOGGER
+def create_logger():
+    load_dotenv()
+    path = os.getenv('LOGGERPATH')
+    logger = logging.getLogger(__name__)
+    handler = RotatingFileHandler(path, maxBytes=2000, backupCount=5)
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(fmt='%(asctime)s: %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+    return logger
+logger = create_logger()
+
+# FUNCTIONS
+def clear_gpu_cache():
     gc.collect()
     with torch.no_grad():
         torch.cuda.empty_cache()
+    logger.info("GPU cache cleared")
 
 class ReplyTypes:
     CODE = "code"
@@ -31,9 +50,11 @@ class ReplyTypes:
     RESET = "reset"
 
 def load_bot():
-    
+    start = time.time()
+    logger.info("Bot loading...")
     bot = telebot.TeleBot(os.getenv('APIKEY'))
     bot.llm = Llama3()
+    logger.info(f"Bot loaded in {round(time.time() - start, 3)} seconds")
     return bot
 
 class Llama3:
@@ -57,7 +78,7 @@ class Llama3:
 
     def start_generator(self, input_ids):
         self.generator = ExLlamaV2StreamingGenerator(self.model, self.cache, self.tokenizer)
-        clear_cache()
+        clear_gpu_cache()
         self.generator.warmup()
         self.generator.set_stop_conditions(self.stop_conditions)
         
@@ -70,10 +91,10 @@ class Llama3:
 
 
 
-def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 4096, Chunk_size = 512) -> str:
+def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 1024, Chunk_size = 512) -> str:
     
     generator = bot.llm.start_generator(input_ids)
-    clear_cache()
+    clear_gpu_cache()
 
     output = []
     generated_tokens = 0
@@ -95,11 +116,13 @@ def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 4096
 
 
 def execute_task(bot, conversation, msg, reply_type, max_len=8100):
-    
+    logger.info("Begin time execution.")
     # time to reply
+    start = time.time()
     stringified_conversation = bot.llm.apply_prompt_template(conversation)
     input_ids = bot.llm.tokenizer.encode(stringified_conversation)
     while len(input_ids) >= max_len:
+        logger.info("Conversation too long, truncating conversation.")
         conversation = conversation[0:1] + conversation[2:]
         stringified_conversation = bot.llm.apply_prompt_template(conversation)
         input_ids = bot.llm.tokenizer.encode(stringified_conversation)
@@ -119,6 +142,8 @@ def execute_task(bot, conversation, msg, reply_type, max_len=8100):
     else:
         store_conversation(msg, conversation)
 
+    logger.info(f"Task executed in {round(time.time() - start, 3)} seconds.")
+
 def get_default_empty_conv():
     return [
         {
@@ -129,6 +154,7 @@ def get_default_empty_conv():
 
 def get_conversation(msg, path='./app/data/conversations.json'):
     if not os.path.exists(path):
+        logger.info(f"Creating .json file.")
         with open(path, "w") as f:
             json.dump({}, f, indent=4)
 
@@ -136,14 +162,19 @@ def get_conversation(msg, path='./app/data/conversations.json'):
         data = json.load(f)
         chat_id = str(msg.chat.id)
         if chat_id not in data:
+            logger.info(f"User does not exist, retrieving default conversation.")
             data[chat_id] = get_default_empty_conv()
-        
-    return data[chat_id]
+    
+    conv = data[chat_id]
+    logger.info(f"Conversation retrieved successfully for user {msg.chat.id}")
+    return conv
 
 def store_conversation(msg, conv, path='./app/data/conversations.json'):
+    logger.info(f"Storing conversation for id {msg.chat.id}")
     with open(path) as f:
         data = json.load(f)
     chat_id = str(msg.chat.id)
     data[chat_id] = conv
     with open(path, 'w') as f:
         json.dump(data, f, indent=4)
+    logger.info(f"Conversation for id {msg.chat.id} stored successfully.")
