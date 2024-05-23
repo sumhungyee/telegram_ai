@@ -86,9 +86,11 @@ class Llama3:
         logger.info(f"Generator initialised in {round(time.time() - start, 3)} seconds")
         return self.generator
     
-    def apply_prompt_template(self, messages):
-        template = Template("{% for message in messages %}{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{{ '<|im_start|>assistant\n' }}")
-        return template.render(messages=messages)
+    def apply_prompt_template(self, messages, role="assistant"):
+        template = Template(
+            "{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = '<|begin_of_text|>' + content %}{% endif %}{{ content }}{% endfor %}{{ '<|start_header_id|>' + role + '<|end_header_id|>\n\n' }}"
+            )
+        return template.render(messages=messages, role=role)
 
 def send_message_wrapper(bot, msg, content):
     try:
@@ -133,7 +135,8 @@ def execute_task(bot, conversation, msg, reply_type, max_len=8100):
     logger.info("Begin time execution.")
     # time to reply
     start = time.time()
-    stringified_conversation = bot.llm.apply_prompt_template(conversation)
+    desired_role = get_role(msg)
+    stringified_conversation = bot.llm.apply_prompt_template(conversation, role=desired_role)
     input_ids = bot.llm.tokenizer.encode(stringified_conversation)
     while len(input_ids) >= max_len:
         logger.info("Conversation too long, truncating conversation.")
@@ -142,7 +145,7 @@ def execute_task(bot, conversation, msg, reply_type, max_len=8100):
         input_ids = bot.llm.tokenizer.encode(stringified_conversation)
 
     final = send_chunked_response_from_prompt(bot, input_ids, msg)
-    desired_role = get_role(msg)
+    
     reply = {
         "role": f"{desired_role}", "content": final
     }
