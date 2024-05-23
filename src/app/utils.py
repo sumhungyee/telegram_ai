@@ -47,6 +47,7 @@ def clear_gpu_cache():
 class ReplyTypes:
     CODE = "code"
     TEXT = "text"
+    NEWTEXT = "newtext"
     RESET = "reset"
 
 def load_bot():
@@ -131,11 +132,39 @@ def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 1024
     
     return "".join(all_chunks)
 
+def get_conversation_block_from_reply_type(reply_type, msg):
+    if reply_type == ReplyTypes.TEXT:
+        conv = get_conversation(msg)
+        
+        block = {
+            "role": "user", "content": msg.text
+        }
+        conv.append(block)
+    elif reply_type == ReplyTypes.NEWTEXT:
+        conv = get_conversation(msg)[0:1]
+        block = {
+            "role": "user", "content": msg.text
+        }
+        conv.append(block)
 
-def execute_task(bot, conversation, msg, reply_type, max_len=8100):
+    elif reply_type == ReplyTypes.RESET:
+        assert("role" in msg.__dict__ and msg.role)
+        edited = "I, the user am unhappy with your current personality and wants to change the system prompt. \
+            Say your last words. After your next reply, your new system prompt will be:"
+        artificial_prompt = edited + msg.text
+        conv = get_conversation(msg)
+        block = {
+            "role": "user", "content": artificial_prompt
+        }
+        conv.append(block)
+    return conv
+
+
+def execute_task(bot, msg, reply_type, max_len=8100):
     logger.info(f"Begin execution of task type {reply_type}")
     # time to reply
     start = time.time()
+    conversation = get_conversation_block_from_reply_type(reply_type, msg)
     desired_role = get_role(msg)
     stringified_conversation = bot.llm.apply_prompt_template(conversation, role=desired_role)
     input_ids = bot.llm.tokenizer.encode(stringified_conversation)

@@ -18,8 +18,8 @@ event = threading.Event()
 def answer_from_queue():
     while not event.is_set():
         if queue.qsize() >= 1:
-            conversation, reply_type, msg = queue.get()
-            execute_task(bot, conversation, msg, reply_type)
+            reply_type, msg = queue.get()
+            execute_task(bot, msg, reply_type)
             time.sleep(0.1)
 
 answerer=threading.Thread(target=answer_from_queue)
@@ -29,29 +29,13 @@ answerer.start()
 @bot.message_handler(commands = ["chat"])
 def start_chat(msg):
     msg.text = msg.text[len(COMMANDS[1]):]
-
-    conv = get_conversation(msg)
-    
-    block = {
-        "role": "user", "content": msg.text
-    }
-    conv.append(block)
-
-    queue.put((conv, ReplyTypes.TEXT, msg))
+    queue.put((ReplyTypes.TEXT, msg))
 
   
 @bot.message_handler(commands = ["newchat"])
 def start_chat(msg):
     msg.text = msg.text[len(COMMANDS[0]):]
-
-    conv = get_conversation(msg)[0:1]
-    
-    block = {
-        "role": "user", "content": msg.text
-    }
-    conv.append(block)
-
-    queue.put((conv, ReplyTypes.TEXT, msg))
+    queue.put((ReplyTypes.NEWTEXT, msg))
 
 
 @bot.message_handler(func = lambda message: message.text.startswith(COMMANDS[2][:-1]))
@@ -64,17 +48,9 @@ def set_system_prompt(msg):
         desired_role = "assistant"
 
     msg.role = desired_role
-   
-    edited = "I, the user am unhappy with your current personality and wants to change the system prompt. Say your last words. After your next reply, your new system prompt will be:"
     msg.text = msg.text[len(cmd) + 1:] # msg.text will be used to create the new system prompt.
-    artificial_prompt = edited + msg.text
 
-    conv = get_conversation(msg)
-    block = {
-        "role": "user", "content": artificial_prompt
-    }
-    conv.append(block)
-    queue.put((conv, ReplyTypes.RESET, msg)) # CHANGE THIS
+    queue.put((ReplyTypes.RESET, msg)) # CHANGE THIS
    
 
 
