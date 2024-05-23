@@ -104,7 +104,7 @@ def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 1024
     
     generator = bot.llm.start_generator(input_ids)
     clear_gpu_cache()
-
+    all_chunks = ""
     output = []
     generated_tokens = 0
     while True:
@@ -112,14 +112,17 @@ def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 1024
         generated_tokens += 1
         print(chunk, end = "")
         output.append(chunk)
+        completed = "".join(output)
         if generated_tokens > 0 and generated_tokens % Chunk_size == 0:
-            send_message_wrapper(bot, msg, "".join(output)) 
+            
+            send_message_wrapper(bot, msg, completed)
+            all_chunks = all_chunks + (completed)
             output = []
 
         if eos or generated_tokens == max_new_tokens:
-            send_message_wrapper(bot, msg, "".join(output)) 
+            send_message_wrapper(bot, msg, completed) 
             break
-    return "".join(output)
+    return all_chunks
 
 
 def execute_task(bot, conversation, msg, reply_type, max_len=8100):
