@@ -90,6 +90,14 @@ class Llama3:
         template = Template("{% for message in messages %}{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{{ '<|im_start|>assistant\n' }}")
         return template.render(messages=messages)
 
+def send_message_wrapper(bot, msg, content):
+    try:
+        bot.send_message(msg.chat.id, content,  reply_parameters=ReplyParameters(
+            message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True),  parse_mode="Markdown")
+    except Exception as e:
+        logger.warning("Message failed to send with Markdown. Trying non-markdown.")
+        bot.send_message(msg.chat.id, content,  reply_parameters=ReplyParameters(
+            message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True))
 
 
 def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 1024, Chunk_size = 512) -> str:
@@ -105,13 +113,11 @@ def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 1024
         print(chunk, end = "")
         output.append(chunk)
         if generated_tokens > 0 and generated_tokens % Chunk_size == 0:
-            bot.send_message(msg.chat.id, "".join(output),  reply_parameters=ReplyParameters(
-                message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True),  parse_mode="Markdown" )
+            send_message_wrapper(bot, msg, "".join(output)) 
             output = []
 
         if eos or generated_tokens == max_new_tokens:
-            bot.send_message(msg.chat.id, "".join(output), reply_parameters=ReplyParameters(
-                message_id=msg.id, chat_id=msg.chat.id, allow_sending_without_reply=True), parse_mode="Markdown")
+            send_message_wrapper(bot, msg, "".join(output)) 
             break
     return "".join(output)
 
@@ -129,8 +135,9 @@ def execute_task(bot, conversation, msg, reply_type, max_len=8100):
         input_ids = bot.llm.tokenizer.encode(stringified_conversation)
 
     final = send_chunked_response_from_prompt(bot, input_ids, msg)
+    desired_role = get_role(msg)
     reply = {
-        "role": "assistant", "content": final
+        "role": f"{desired_role}", "content": final
     }
     conversation.append(reply)
     if reply_type == ReplyTypes.RESET:
@@ -142,7 +149,7 @@ def execute_task(bot, conversation, msg, reply_type, max_len=8100):
         store_conversation(msg, new_conversation)
     else:
         store_conversation(msg, conversation)
-
+    store_role(msg, desired_role)
     logger.info(f"Task executed in {round(time.time() - start, 3)} seconds.")
 
 def get_default_empty_conv():
@@ -155,7 +162,7 @@ def get_default_empty_conv():
 
 def get_conversation(msg, path='./app/data/conversations.json'):
     if not os.path.exists(path):
-        logger.info(f"Creating .json file.")
+        logger.info(f"Creating conversations.json file.")
         with open(path, "w") as f:
             json.dump({}, f, indent=4)
 
@@ -167,7 +174,7 @@ def get_conversation(msg, path='./app/data/conversations.json'):
             data[chat_id] = get_default_empty_conv()
     
     conv = data[chat_id]
-    logger.info(f"Conversation retrieved successfully for user {msg.chat.id}")
+    logger.info(f"Conversation retrieved successfully for id {msg.chat.id}")
     return conv
 
 def store_conversation(msg, conv, path='./app/data/conversations.json'):
@@ -179,3 +186,35 @@ def store_conversation(msg, conv, path='./app/data/conversations.json'):
     with open(path, 'w') as f:
         json.dump(data, f, indent=4)
     logger.info(f"Conversation for id {msg.chat.id} stored successfully.")
+
+
+def get_role(msg, path='./app/data/roles.json'):
+        
+    if not os.path.exists(path):
+        logger.info(f"Creating roles.json file.")
+        with open(path, "w") as f:
+            json.dump({}, f, indent=4)
+
+    if "role" in msg.__dict__ and msg.role:
+        return msg.role
+    
+    with open(path) as f:
+        data = json.load(f)
+        chat_id = str(msg.chat.id)
+        if chat_id not in data:
+            logger.info(f"User does not exist, retrieving default role.")
+            data[chat_id] = "assistant"
+    desired_role = data[chat_id]
+    logger.info(f"Desired role retrieved successfully for id {msg.chat.id}")
+    return desired_role
+
+
+def store_role(msg, role, path='./app/data/roles.json'):
+    logger.info(f"Storing role for id {msg.chat.id}")
+    with open(path) as f:
+        data = json.load(f)
+    chat_id = str(msg.chat.id)
+    data[chat_id] = role
+    with open(path, 'w') as f:
+        json.dump(data, f, indent=4)
+    logger.info(f"Desired role for id {msg.chat.id} stored successfully.")

@@ -8,7 +8,7 @@ from queue import Queue
 
 
 import threading
-import os
+import re
 
 
 COMMANDS = ["/newchat ", "/chat ", "/setsystemprompt "]
@@ -54,11 +54,19 @@ def start_chat(msg):
     queue.put((conv, ReplyTypes.TEXT, msg))
 
 
-@bot.message_handler(commands = ["setsystemprompt"])
+@bot.message_handler(func = lambda message: message.text.startswith(COMMANDS[2][:-1]))
 def set_system_prompt(msg):
+    cmd = re.match(f"{COMMANDS[2][:-1]}([\w_]*)", msg.text, re.IGNORECASE).group()
+    array = cmd.split("_")
+    if len(array) > 1 and array[-1]:
+        desired_role = array[-1]
+    else:
+        desired_role = "assistant"
+
+    msg.role = desired_role
    
     edited = "I, the user am unhappy with your current personality and wants to change the system prompt. Say your last words. After your next reply, your new system prompt will be:"
-    msg.text = msg.text[len(COMMANDS[2]):] # msg.text will be used to create the new system prompt.
+    msg.text = msg.text[len(cmd) + 1:] # msg.text will be used to create the new system prompt.
     artificial_prompt = edited + msg.text
 
     conv = get_conversation(msg)
