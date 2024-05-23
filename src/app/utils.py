@@ -28,7 +28,7 @@ def create_logger():
     load_dotenv()
     path = os.getenv('LOGGERPATH')
     logger = logging.getLogger(__name__)
-    handler = RotatingFileHandler(path, maxBytes=2000, backupCount=5)
+    handler = RotatingFileHandler(path, maxBytes=2000000, backupCount=5)
     handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter(fmt='%(asctime)s: %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
@@ -133,7 +133,7 @@ def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 1024
 
 
 def execute_task(bot, conversation, msg, reply_type, max_len=8100):
-    logger.info("Begin time execution.")
+    logger.info(f"Begin execution of task type {reply_type}")
     # time to reply
     start = time.time()
     desired_role = get_role(msg)
