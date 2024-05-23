@@ -6,6 +6,7 @@ import json
 import logging
 import os
 
+from app.agents import *
 from dotenv import load_dotenv
 from logging.handlers import RotatingFileHandler
 from jinja2 import Template
@@ -45,7 +46,7 @@ def clear_gpu_cache():
     logger.info("GPU cache cleared")
 
 class ReplyTypes:
-    CODE = "code"
+    TOOLTEXT = "tooltext"
     TEXT = "text"
     NEWTEXT = "newtext"
     RESET = "reset"
@@ -166,13 +167,19 @@ def execute_task(bot, msg, reply_type, max_len=8100):
     start = time.time()
     conversation = get_conversation_block_from_reply_type(reply_type, msg)
     desired_role = get_role(msg)
+    
+    # Truncate long conversations
     stringified_conversation = bot.llm.apply_prompt_template(conversation, role=desired_role)
     input_ids = bot.llm.tokenizer.encode(stringified_conversation)
-    while len(input_ids) >= max_len:
+
+    while len(input_ids[0]) >= max_len:
         logger.info("Conversation too long, truncating conversation.")
         conversation = conversation[0:1] + conversation[2:]
         stringified_conversation = bot.llm.apply_prompt_template(conversation)
         input_ids = bot.llm.tokenizer.encode(stringified_conversation)
+
+    # if reply_type == ReplyTypes.TOOLTEXT:
+    #     pass
 
     final = send_chunked_response_from_prompt(bot, input_ids, msg)
     

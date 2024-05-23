@@ -10,7 +10,7 @@ import threading
 import re
 
 
-COMMANDS = ["/newchat ", "/chat ", "/setsystemprompt "]
+COMMANDS = ["/newchat ", "/chat ", "/setsystemprompt ", "/toolchat "]
 load_dotenv()
 bot = load_bot()
 queue = Queue()
@@ -37,6 +37,10 @@ def start_chat(msg):
     msg.text = msg.text[len(COMMANDS[0]):]
     queue.put((ReplyTypes.NEWTEXT, msg))
 
+# @bot.message_handler(commands = ["toolchat"])
+# def start_chat(msg):
+#     msg.text = msg.text[len(COMMANDS[3]):]
+#     queue.put((ReplyTypes.TOOLTEXT, msg))
 
 @bot.message_handler(func = lambda message: message.text.startswith(COMMANDS[2][:-1]))
 def set_system_prompt(msg):
