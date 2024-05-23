@@ -1,8 +1,7 @@
 from app.agents import *
 from app.utils import *
 
-import json
-
+import time
 from telebot.types import InputFile
 from queue import Queue
 
@@ -21,6 +20,7 @@ def answer_from_queue():
         if queue.qsize() >= 1:
             conversation, reply_type, msg = queue.get()
             execute_task(bot, conversation, msg, reply_type)
+            time.sleep(0.1)
 
 answerer=threading.Thread(target=answer_from_queue)
 answerer.start()

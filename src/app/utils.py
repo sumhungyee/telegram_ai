@@ -123,8 +123,9 @@ def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 1024
 
         if eos or generated_tokens == max_new_tokens:
             completed = "".join(output)
-            all_chunks.append(completed)
-            send_message_wrapper(bot, msg, completed)
+            if completed:
+                all_chunks.append(completed)
+                send_message_wrapper(bot, msg, completed)
             break
     
     
