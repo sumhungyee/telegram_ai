@@ -78,5 +78,5 @@ def search_generate_pipeline(llm, conversation):
 
     if results:
         adapted_conversation[-1]["content"] = f"""{query}\n\nPretend you performed a search over the and obtained the following results. \
-            you may or may not choose to use them in your answer. Reference links (write down the URLs) used in your reply with footnotes.\n\n{results}"""
+            you may or may not choose to use them in your answer. Provide Vancouver style citations using superscripts for in-text citations and a list of references (URLs).\n\n{results}"""
     return adapted_conversation
