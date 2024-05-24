@@ -55,6 +55,7 @@ def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 1024
             if completed:
                 all_chunks.append(completed)
                 send_message_wrapper(bot, msg, completed)
+            print()
             break
     
     

@@ -1,6 +1,8 @@
 import copy
+import traceback
 from app.utils import *
 from duckduckgo_search import DDGS
+from datetime import date
 
 
 def decide_websearch(llm_model, query):
@@ -29,7 +31,8 @@ def decide_websearch(llm_model, query):
         logger.info(f"Websearch routing output {output} finished in {round(time.time() - start, 3)}")
         return output['choice'] == "web_search"
     except Exception as e:
-        logger.error("Error while routing! Error: {e}")
+        logger.error(f"Error while routing! Error: {e}")
+        traceback.print_exc()
         return False
         
 def perform_websearch(llm_model, query):
@@ -38,11 +41,12 @@ def perform_websearch(llm_model, query):
     start = time.time()
     sys_prompt = [{
         "role": "system", "content": f"""You are an expert at generating google search terms for a given question/topic. 
-        These search terms will be used to search the internet for more information about the question/topic.
+        These search terms will be used to search the internet for more information about the question/topic. 
+        The date today is {date.today().strftime("%B %d, %Y")}, in case the question/topic asks for recent events.
         Return a JSON array of at most 2 search terms in a code chunk. Your reply should adhere to the format in the example below.
         Example:
         ```json
-        ["Oxynase", "What is Oxymetazoline"]
+        ["Latest GTA 6 updates December 2023", "GTA 6 upcoming features"]
         ```
         The question/topic is given here: {query}
         """
@@ -58,13 +62,17 @@ def perform_websearch(llm_model, query):
         for term in output:
             result = ddgs.text(term, max_results=3)
             results.extend(result)
-        return format_results(results)
+        results =  [dict(t) for t in [tuple(d.items()) for d in results]] # remove dupes
+        formatted_results = format_process_results(results)
+        logger.info(repr(formatted_results))
+        return formatted_results
     except Exception as e:
-        logger.error("Error while searching! Error: {e}")
+        logger.error(f"Error while searching! Error: {e}")
+        traceback.print_exc()
         return ""
 
 
-def format_results(results: list):
+def format_process_results(results: list):
     return "\n\n".join([x['href'] + '\n' + x['body'] for x in results])
     
 def search_generate_pipeline(llm, conversation):
@@ -77,6 +85,11 @@ def search_generate_pipeline(llm, conversation):
         results = ""
 
     if results:
-        adapted_conversation[-1]["content"] = f"""{query}\n\nPretend you performed a search over the and obtained the following results. \
-            you may or may not choose to use them in your answer. Provide Vancouver style citations using superscripts for in-text citations and a list of references (URLs).\n\n{results}"""
+        adapted_conversation[-1]["content"] = f"""{query}\n\nPretend you performed a search over the and obtained some results. \
+            The results consist of a URL and a general description, which may or may not contain useful information. Decide if you wish to use a result in your answer.
+            If the description contains useful information, you should answer using the information from the description,\
+                  using a numbered citation style where in-text citations are labelled with superscripted numbers. You should have a reference list containing all URLs which you have decided to use.
+            If the description does not contain useful information, but the URLs are useful, then just provide the URLs in your reply.
+            \n
+            Results:\n\n{results}"""
     return adapted_conversation

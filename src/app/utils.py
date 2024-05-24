@@ -63,15 +63,24 @@ def generate_quick(llm, input_ids, max_new_tokens=256):
         output.append(chunk)
         if eos or generated_tokens == max_new_tokens:
             break
-    
+    print()
     return "".join(output)
 
 def try_parse(function, **kwargs):
     
     string = function(**kwargs)
     pattern = r'^```(?:\w+)?\s*\n(.*?)(?=^```)```'
-    output = re.findall(pattern, string, re.DOTALL | re.MULTILINE)[0]
-    return json.loads(output)
+    pattern_2 = r'^```(?:\w+)?\s*\n(.*)'
+    for pat in [pattern, pattern_2]:
+        regex = re.findall(pat, string, re.DOTALL | re.MULTILINE)
+     
+        try:
+            output = regex[0]
+            return json.loads(output)
+        except Exception as f:
+            logger.error(repr(f"JSON decode error in try_parse: JSON string:{string}, pattern:{pat}"))
+            continue
+    return json.loads(string)
    
 
 class Llama3:
