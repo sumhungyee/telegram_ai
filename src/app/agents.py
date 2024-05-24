@@ -27,7 +27,7 @@ def decide_websearch(llm_model, query):
     truncated_input_ids, _ = truncate_conversation(input_ids, sys_prompt, llm_model)
 
     try:
-        output = try_parse(generate_quick, llm=llm_model, input_ids=truncated_input_ids, max_new_tokens=30)
+        output = try_parse(generate_quick, llm=llm_model, input_ids=truncated_input_ids, max_new_tokens=50)
         logger.info(f"Websearch routing output {output} finished in {round(time.time() - start, 3)}")
         return output['choice'] == "web_search"
     except Exception as e:
@@ -56,7 +56,7 @@ def perform_websearch(llm_model, query):
     truncated_input_ids, _ = truncate_conversation(input_ids, sys_prompt, llm_model)
 
     try:
-        output = try_parse(generate_quick, llm=llm_model, input_ids=truncated_input_ids, max_new_tokens=30)
+        output = try_parse(generate_quick, llm=llm_model, input_ids=truncated_input_ids, max_new_tokens=50)
         logger.info(f"Websearch terms {output} finished in {round(time.time() - start, 3)}")
         results = []
         for term in output:
