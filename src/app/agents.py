@@ -87,8 +87,8 @@ def search_generate_pipeline(llm, conversation):
     if results:
         adapted_conversation[-1]["content"] = f"""{query}\n\nPretend you performed a search over the and obtained some results. \
             The results consist of the title of a webpage, its URL and a general description, which may or may not contain useful information. Decide if you wish to use a result in your answer.
-            If the description contains useful information, you should answer using the information from the description,\
-                  using a numbered citation style where in-text citations are labelled with superscripted numbers. You should have a reference list containing all URLs which you have decided to use.
+            If the description contains useful information, you should answer using the information from the description, using a numbered citation style where in-text citations are labelled with superscripted numbers. 
+            You should have a reference list containing all URLs which you have decided to use.
             If the description does not contain useful information, but the URLs are useful, then just provide the URLs in your reply.
             \n
             Results:\n\n{results}"""
