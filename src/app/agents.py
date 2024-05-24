@@ -73,7 +73,7 @@ def perform_websearch(llm_model, query):
 
 
 def format_process_results(results: list):
-    return "\n\n".join([x['href'] + '\n' + x['body'] for x in results])
+    return "\n\n".join([x['title'] + '\n' + x['href'] + '\n' + x['body'] for x in results])
     
 def search_generate_pipeline(llm, conversation):
     adapted_conversation = copy.deepcopy(conversation)
@@ -86,7 +86,7 @@ def search_generate_pipeline(llm, conversation):
 
     if results:
         adapted_conversation[-1]["content"] = f"""{query}\n\nPretend you performed a search over the and obtained some results. \
-            The results consist of a URL and a general description, which may or may not contain useful information. Decide if you wish to use a result in your answer.
+            The results consist of the title of a webpage, its URL and a general description, which may or may not contain useful information. Decide if you wish to use a result in your answer.
             If the description contains useful information, you should answer using the information from the description,\
                   using a numbered citation style where in-text citations are labelled with superscripted numbers. You should have a reference list containing all URLs which you have decided to use.
             If the description does not contain useful information, but the URLs are useful, then just provide the URLs in your reply.
