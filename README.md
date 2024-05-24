@@ -32,4 +32,5 @@ This installation will take some time.
 
 ## Sample Images
 ![image](https://github.com/sumhungyee/telegram_ai/assets/113227987/8a4208f9-915d-49c0-9a79-404aa8f67f57)
+![image](https://github.com/sumhungyee/telegram_ai/assets/113227987/52bbd264-55a8-412a-8189-afce2a9e3843)
 
