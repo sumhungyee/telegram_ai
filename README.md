@@ -24,6 +24,12 @@ docker compose up --build
 This installation will take some time.
 
 # User Guide:
-To be added.
+## Available commands
+1. `/newchat` - Starts a new `conversation` with the telegram bot. This conversation is unique to each telegram chat id.
+2. `/chat` - Continue a `conversation`.
+3. `/setsystemprompt`_<ROLE> - Change the system prompt and starts a new `conversation` with a new manually-inscribed role as <ROLE>. This is optional and `/setsystemprompt` is equivalent to `setsystemprompt_assistant`
+4. `/toolchat` - (Experimental) Continue a `conversation` with web search enabled.
 
+## Sample Images
+![image](https://github.com/sumhungyee/telegram_ai/assets/113227987/8a4208f9-915d-49c0-9a79-404aa8f67f57)
 
