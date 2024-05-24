@@ -1,4 +1,5 @@
 from app.agents import *
+from app.logic import *
 from app.utils import *
 
 import time
@@ -37,10 +38,12 @@ def start_chat(msg):
     msg.text = msg.text[len(COMMANDS[0]):]
     queue.put((ReplyTypes.NEWTEXT, msg))
 
-# @bot.message_handler(commands = ["toolchat"])
-# def start_chat(msg):
-#     msg.text = msg.text[len(COMMANDS[3]):]
-#     queue.put((ReplyTypes.TOOLTEXT, msg))
+###############################################
+@bot.message_handler(commands = ["toolchat"])
+def start_chat(msg):
+    msg.text = msg.text[len(COMMANDS[3]):]
+    queue.put((ReplyTypes.TOOLTEXT, msg))
+###############################################
 
 @bot.message_handler(func = lambda message: message.text.startswith(COMMANDS[2][:-1]))
 def set_system_prompt(msg):
