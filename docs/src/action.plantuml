@@ -1,0 +1,31 @@
+@startuml action
+start
+switch (startup)
+case ( chat )
+  :Retrieve current conversation and role name;
+  if (websearch needed) then (yes)
+    :perform web search;
+  else (no)
+  endif
+  :Generate reply;
+case ( newchat ) 
+  :Retrieve only system prompt and role name;
+  if (websearch needed) then (yes)
+    :perform web search;
+  else (no)
+  endif
+case ( chatonly )
+  :Retrieve current conversation and role name;
+  :Generate reply;
+case ( newchatonly )
+  :Retrieve only system prompt and role name;
+  :Generate reply;
+
+case ( setsystemprompt )
+  :Overwrite system prompt;
+  :Overwrite role name, if any;
+endswitch
+:Update conversations;
+:Update role name;
+stop
+@enduml
