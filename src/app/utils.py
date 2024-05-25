@@ -85,7 +85,7 @@ def try_parse(function, **kwargs):
 
 class Llama3:
     
-    def __init__(self, temperature=0.3):
+    def __init__(self):
         load_dotenv()
         self.config = ExLlamaV2Config()
         self.config.model_dir = os.getenv('LLMPATH')
@@ -95,15 +95,17 @@ class Llama3:
         self.cache = ExLlamaV2Cache_8bit(self.model, lazy = True, batch_size = batch_size)
         self.model.load_autosplit(self.cache)
         self.tokenizer = ExLlamaV2Tokenizer(self.config)
-        self.settings = ExLlamaV2Sampler.Settings()
-        self.settings.temperature = temperature
-        self.settings.top_k = 50
-        self.settings.top_p = 0.8
-        self.settings.token_repetition_penalty = 1.05
         self.stop_conditions = [128009, self.tokenizer.eos_token_id]
 
-    def start_generator(self, input_ids):
+    def start_generator(self, input_ids, temperature=0.3, top_k=50, top_p=0.8, repetition_penalty=1.05):
         start = time.time()
+
+        self.settings = ExLlamaV2Sampler.Settings()
+        self.settings.temperature = temperature
+        self.settings.top_k = top_k
+        self.settings.top_p = top_p
+        self.settings.token_repetition_penalty = repetition_penalty
+
         self.generator = ExLlamaV2StreamingGenerator(self.model, self.cache, self.tokenizer)
         clear_gpu_cache()
         self.generator.warmup()
