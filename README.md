@@ -37,4 +37,4 @@ docker compose up
 4. `/chatonly` - Continue a `conversation`. Does not support websearch.
 
 ## Activity Diagram
-(Diagram)[./docs/diagrams/action.png]
+![Diagram](./docs/diagrams/action.png)
