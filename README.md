@@ -1,6 +1,6 @@
 # telegram_ai
 This project is a spiritual successor of an older project: [Telegram_ai_gptq](https://github.com/sumhungyee/telegram_ai_gptq).
-Telegram_AI provides an AI-powered Telegram bot, optimised for local usage. Supports web browsing question-answering as well as memory capabilities.
+Telegram_AI provides an AI-powered Telegram bot, optimised for local usage, using the exl2 quantisation format,  a format that has been proven to be [remarkably efficient](https://oobabooga.github.io/blog/posts/gptq-awq-exl2-llamacpp/). Supports web browsing question-answering as well as memory capabilities.
 Powered by Llama 3.
 
 # Installation Guide
