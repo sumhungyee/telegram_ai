@@ -62,15 +62,9 @@ def send_chunked_response_from_prompt(bot, input_ids, msg, max_new_tokens = 1024
     return "".join(all_chunks)
 
 def get_conversation_block_from_reply_type(reply_type, msg):
-    if reply_type == ReplyTypes.TEXT or reply_type == ReplyTypes.TOOLTEXT:
-        conv = get_conversation(msg)
-        
-        block = {
-            "role": "user", "content": msg.text
-        }
-        conv.append(block)
-    elif reply_type == ReplyTypes.NEWTEXT:
-        conv = get_conversation(msg)[0:1]
+    if reply_type != ReplyTypes.RESET:
+
+        conv = get_conversation(msg) if reply_type not in (ReplyTypes.NEWTOOLTEXT, ReplyTypes.NEWTEXT) else get_conversation(msg)[0:1]
         block = {
             "role": "user", "content": msg.text
         }
@@ -106,16 +100,19 @@ def execute_task(bot, msg, reply_type, max_len=8100):
     input_ids, conversation = truncate_conversation(input_ids, conversation, bot.llm)
 
     assert(conversation[-1]["role"] == "user")
-    ###########################################
-    if reply_type == ReplyTypes.TOOLTEXT:
+ 
+    # Perform websearch if needed
+    if reply_type in (ReplyTypes.TOOLTEXT, ReplyTypes.NEWTOOLTEXT):
+        logging.info(repr(f"Websearch needed for request: {msg.text}"))
         adapted_conversation = search_generate_pipeline(bot.llm, conversation)
         stringified_adapted_conversation = bot.llm.apply_prompt_template(adapted_conversation, role=desired_role)
         input_ids = bot.llm.tokenizer.encode(stringified_adapted_conversation)
         input_ids, _ = truncate_conversation(input_ids, adapted_conversation, bot.llm)
         
-    ###########################################
+    # send message
     final = send_chunked_response_from_prompt(bot, input_ids, msg)
     
+    # storing changes
     reply = {
         "role": f"{desired_role}", "content": final
     }

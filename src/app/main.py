@@ -11,7 +11,7 @@ import threading
 import re
 
 
-COMMANDS = ["/newchat ", "/chat ", "/setsystemprompt ", "/toolchat "]
+COMMANDS = ["/newchat ", "/chatonly ", "/setsystemprompt ", "/chat ", "/newchatonly "]
 load_dotenv()
 bot = load_bot()
 queue = Queue()
@@ -26,8 +26,12 @@ def answer_from_queue():
 answerer=threading.Thread(target=answer_from_queue)
 answerer.start()
 
+@bot.message_handler(commands = ["newchatonly"])
+def start_chat(msg):
+    msg.text = msg.text[len(COMMANDS[4]):]
+    queue.put((ReplyTypes.NEWTEXT, msg))
 
-@bot.message_handler(commands = ["chat"])
+@bot.message_handler(commands = ["chatonly"])
 def start_chat(msg):
     msg.text = msg.text[len(COMMANDS[1]):]
     queue.put((ReplyTypes.TEXT, msg))
@@ -36,14 +40,14 @@ def start_chat(msg):
 @bot.message_handler(commands = ["newchat"])
 def start_chat(msg):
     msg.text = msg.text[len(COMMANDS[0]):]
-    queue.put((ReplyTypes.NEWTEXT, msg))
+    queue.put((ReplyTypes.NEWTOOLTEXT, msg))
 
-###############################################
-@bot.message_handler(commands = ["toolchat"])
+
+@bot.message_handler(commands = ["chat"])
 def start_chat(msg):
     msg.text = msg.text[len(COMMANDS[3]):]
     queue.put((ReplyTypes.TOOLTEXT, msg))
-###############################################
+
 
 @bot.message_handler(func = lambda message: message.text.startswith(COMMANDS[2][:-1]))
 def set_system_prompt(msg):

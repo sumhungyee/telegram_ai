@@ -123,5 +123,6 @@ class Llama3:
 class ReplyTypes:
     TOOLTEXT = "tooltext"
     TEXT = "text"
+    NEWTOOLTEXT = "newtooltext"
     NEWTEXT = "newtext"
     RESET = "reset"
