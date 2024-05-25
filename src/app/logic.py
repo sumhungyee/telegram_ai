@@ -103,7 +103,7 @@ def execute_task(bot, msg, reply_type, max_len=8100):
  
     # Perform websearch if needed
     if reply_type in (ReplyTypes.TOOLTEXT, ReplyTypes.NEWTOOLTEXT):
-        logging.info(repr(f"Websearch needed for request: {msg.text}"))
+        logger.info(repr(f"Websearch needed for request: {msg.text}"))
         adapted_conversation = search_generate_pipeline(bot.llm, conversation)
         stringified_adapted_conversation = bot.llm.apply_prompt_template(adapted_conversation, role=desired_role)
         input_ids = bot.llm.tokenizer.encode(stringified_adapted_conversation)
