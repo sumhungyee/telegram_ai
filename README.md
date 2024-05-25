@@ -24,6 +24,12 @@ docker compose up --build
 This installation will take some time.
 
 # User Guide:
+
+## Running the application
+```
+docker compose up
+```
+
 ## Available commands
 1. `/newchat` - Starts a new `conversation` with the telegram bot. This conversation is unique to each telegram chat id.
 2. `/chat` - Continue a `conversation`.
