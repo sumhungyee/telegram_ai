@@ -31,10 +31,10 @@ docker compose up
 ```
 
 ## Available commands
-1. `/newchat` - Starts a new `conversation` with the telegram bot. This conversation is unique to each telegram chat id.
-2. `/chat` - Continue a `conversation`.
+1. `/newchat` - Starts a new `conversation` with the telegram bot. This conversation is unique to each telegram chat id. Supports websearch.
+2. `/chat` - Continue a `conversation`. Supports websearch.
 3. `/setsystemprompt`_<ROLE> - Change the system prompt and starts a new `conversation` with a new manually-inscribed role as <ROLE>. This is optional and `/setsystemprompt` is equivalent to `setsystemprompt_assistant`
-4. `/toolchat` - (Experimental) Continue a `conversation` with web search enabled.
+4. `/chatonly` - Continue a `conversation`. Does not support websearch.
 
 ## Sample Images
 ![image](https://github.com/sumhungyee/telegram_ai/assets/113227987/8a4208f9-915d-49c0-9a79-404aa8f67f57)
