@@ -40,3 +40,13 @@ docker compose up
 
 ## Activity Diagram
 ![Diagram](./docs/diagrams/action.png)
+
+# Sample Images
+> [!NOTE]
+> These conversations were produced on 26 May 2024.
+![image](https://github.com/sumhungyee/telegram_ai/assets/113227987/40a9dfef-2359-482c-8d4b-2553ffca0fe8)
+![image](https://github.com/sumhungyee/telegram_ai/assets/113227987/c27dc4ea-14de-4307-9315-48b538321767)
+
+# Todo
+1. Docstrings.
+
